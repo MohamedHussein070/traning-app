@@ -11,8 +11,11 @@ async function fetchEndpoint(endpoint) {
   const res = await fetch(BASE + endpoint);
   if (!res.ok) throw new Error(`API error ${res.status}`);
   const json = await res.json();
-  // API returns { data: [...] } or just an array
-  const data = json.data ?? json;
+  // API returns { data: { exercises: [...] } } or { data: [...] } or just an array
+  let data = json;
+  if (json.data !== undefined) {
+    data = Array.isArray(json.data) ? json.data : (json.data.exercises ?? json.data);
+  }
   setCachedEndpoint(endpoint, data);
   return data;
 }
