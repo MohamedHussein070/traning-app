@@ -111,15 +111,18 @@ export function openExercisePicker(onAdd, context = 'plan') {
           chips.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
           chip.classList.add('active');
           currentBodyPart = chip.dataset.part;
-          if (currentBodyPart !== 'all' && !allExercises.some(ex => {
+
+          const alreadyLoaded = allExercises.some(ex => {
             const bp = ex.bodyParts?.[0] ?? ex.bodyPart ?? '';
             return bp.toLowerCase() === currentBodyPart.toLowerCase();
-          })) {
-            // Load exercises for this body part
+          });
+
+          if (!alreadyLoaded) {
             document.getElementById('picker-list').innerHTML =
               [...Array(5)].map(() => '<div class="skeleton skeleton-card"></div>').join('');
-            const exs = await API.getExercisesByBodyPart(currentBodyPart);
-            // Merge into allExercises
+            const exs = currentBodyPart === 'all'
+              ? await API.getAllExercises()
+              : await API.getExercisesByBodyPart(currentBodyPart);
             exs.forEach(ex => {
               if (!allExercises.find(e => (e.exerciseId ?? e.id) === (ex.exerciseId ?? ex.id))) {
                 allExercises.push(ex);
@@ -135,15 +138,11 @@ export function openExercisePicker(onAdd, context = 'plan') {
   }
 
   async function initialLoad() {
-    try {
-      // Load 'all' exercises — use cached or fetch
-      allExercises = await API.getAllExercises();
-      applyFilters();
-    } catch {
-      document.getElementById('picker-list').innerHTML =
-        `<div class="empty-state"><div class="empty-state-text">${t('picker.error')}</div></div>`;
-    }
+    // Load body parts first, then auto-select first one
     await loadBodyParts();
+    // Auto-click first real body part chip to load exercises immediately
+    const firstChip = document.querySelector('#picker-chips .chip:not([data-part="all"])');
+    if (firstChip) firstChip.click();
   }
 
   document.getElementById('picker-search').addEventListener('input', e => {

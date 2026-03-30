@@ -11,21 +11,23 @@ async function fetchEndpoint(endpoint) {
   const res = await fetch(BASE + endpoint);
   if (!res.ok) throw new Error(`API error ${res.status}`);
   const json = await res.json();
-  // API returns { data: { exercises: [...] } } or { data: [...] } or just an array
+  // API returns { success, data: { exercises: [...] } } or { success, data: [...] }
   let data = json;
   if (json.data !== undefined) {
-    data = Array.isArray(json.data) ? json.data : (json.data.exercises ?? json.data);
+    data = Array.isArray(json.data) ? json.data
+      : (json.data.exercises ?? json.data);
   }
   setCachedEndpoint(endpoint, data);
   return data;
 }
 
 export async function getBodyPartList() {
-  return fetchEndpoint('/api/v1/exercises/bodyPartList');
+  // Returns array of body part strings
+  return fetchEndpoint('/api/v1/exercises/bodyParts');
 }
 
 export async function getExercisesByBodyPart(bodyPart) {
-  return fetchEndpoint(`/api/v1/exercises/bodyPart/${encodeURIComponent(bodyPart)}`);
+  return fetchEndpoint(`/api/v1/exercises/bodyPart/${encodeURIComponent(bodyPart)}?limit=100&offset=0`);
 }
 
 export async function getExerciseById(id) {
@@ -33,5 +35,14 @@ export async function getExerciseById(id) {
 }
 
 export async function getAllExercises() {
-  return fetchEndpoint('/api/v1/exercises?limit=1300');
+  // Load all body parts, then load each — fallback to first body part only
+  try {
+    const parts = await getBodyPartList();
+    const results = await Promise.all(
+      parts.map(p => getExercisesByBodyPart(p).catch(() => []))
+    );
+    return results.flat();
+  } catch {
+    return [];
+  }
 }
