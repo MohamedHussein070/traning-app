@@ -3,6 +3,12 @@
 import * as DB from '../db.js';
 import { navigate, t, state } from '../app.js';
 
+let chartInstance = null;
+
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
 export function renderProgress(container, params = {}) {
   const sessions = DB.getSessions();
 
@@ -39,6 +45,7 @@ export function renderProgress(container, params = {}) {
   function renderChart(name, rangeVal) {
     const chartContainer = document.getElementById('chart-container');
     if (!chartContainer) return;
+    if (chartInstance) { chartInstance.destroy(); chartInstance = null; }
     chartContainer.innerHTML = '<canvas id="progress-chart"></canvas>';
 
     const data = getChartData(name, rangeVal);
@@ -54,7 +61,7 @@ export function renderProgress(container, params = {}) {
     const isWeight = ex?.type === 'weights';
     const yLabel = isWeight ? `${t('progress.maxWeight')} (${unit})` : `Max Reps`;
 
-    new Chart(document.getElementById('progress-chart'), {
+    chartInstance = new Chart(document.getElementById('progress-chart'), {
       type: 'line',
       data: {
         labels: data.map(p => new Date(p.date).toLocaleDateString()),
@@ -76,14 +83,14 @@ export function renderProgress(container, params = {}) {
         plugins: {
           legend: { display: false },
           tooltip: {
-            backgroundColor: '#1C1C1E',
-            titleColor: '#fff',
-            bodyColor: '#AEAEB2',
+            backgroundColor: cssVar('--surface'),
+            titleColor: cssVar('--text'),
+            bodyColor: cssVar('--text2'),
           },
         },
         scales: {
-          x: { ticks: { color: '#AEAEB2', maxTicksLimit: 6 }, grid: { color: '#3A3A3C' } },
-          y: { ticks: { color: '#AEAEB2' }, grid: { color: '#3A3A3C' } },
+          x: { ticks: { color: cssVar('--text2'), maxTicksLimit: 6 }, grid: { color: cssVar('--border') } },
+          y: { ticks: { color: cssVar('--text2') }, grid: { color: cssVar('--border') } },
         },
       },
     });

@@ -8,6 +8,10 @@ import { openExercisePicker } from './exercise-picker.js';
 
 let elapsedInterval = null;
 
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 export function renderWorkout(container, params = {}) {
   let session = DB.getActiveSession();
 
@@ -104,10 +108,10 @@ export function renderWorkout(container, params = {}) {
     return `
       <div class="workout-exercise" id="ex-block-${exIdx}">
         <div class="workout-exercise-header">
-          <span class="workout-exercise-name">${ex.name}</span>
+          <span class="workout-exercise-name">${esc(ex.name)}</span>
           <button class="btn-ghost add-set-btn" data-ex="${exIdx}">+Set</button>
         </div>
-        ${ex.gifUrl ? `<img src="${ex.gifUrl}" style="width:100%;max-height:160px;object-fit:cover;border-radius:12px;margin-bottom:12px" loading="lazy">` : ''}
+        ${ex.gifUrl ? `<img src="${esc(ex.gifUrl)}" style="width:100%;max-height:160px;object-fit:cover;border-radius:12px;margin-bottom:12px" loading="lazy">` : ''}
         <div class="sets-container">${setsHtml}</div>
       </div>`;
   }
@@ -118,7 +122,7 @@ export function renderWorkout(container, params = {}) {
     container.innerHTML = `
       <div class="view" id="workout-view">
         <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
-          <h1 class="view-title" style="margin:0">${session.planName}</h1>
+          <h1 class="view-title" style="margin:0">${esc(session.planName)}</h1>
         </div>
         <div style="text-align:center;margin-bottom:16px">
           <div class="text-muted" style="font-size:12px;text-transform:uppercase;letter-spacing:1px">${t('workout.elapsed')}</div>
