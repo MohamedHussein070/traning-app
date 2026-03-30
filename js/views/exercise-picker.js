@@ -4,7 +4,11 @@
 import * as API from '../api.js';
 import { t } from '../app.js';
 
-export function openExercisePicker(onAdd) {
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+export function openExercisePicker(onAdd, context = 'plan') {
   // Remove any existing picker
   document.getElementById('exercise-picker-overlay')?.remove();
 
@@ -51,15 +55,15 @@ export function openExercisePicker(onAdd) {
       return;
     }
     list.innerHTML = exercises.map(ex => `
-      <div class="exercise-card" data-id="${ex.exerciseId ?? ex.id}" style="margin-bottom:8px">
+      <div class="exercise-card" data-id="${esc(ex.exerciseId ?? ex.id)}" style="margin-bottom:8px">
         ${ex.gifUrl
-          ? `<img class="exercise-thumb" src="${ex.gifUrl}" alt="${ex.name}" loading="lazy">`
+          ? `<img class="exercise-thumb" src="${ex.gifUrl}" alt="${esc(ex.name)}" loading="lazy">`
           : `<div class="exercise-thumb-placeholder">🏋️</div>`}
         <div class="exercise-info">
-          <div class="exercise-name">${ex.name}</div>
-          <div class="exercise-meta">${ex.targetMuscles?.[0] ?? ex.target ?? ''} · ${ex.equipments?.[0] ?? ex.equipment ?? ''}</div>
+          <div class="exercise-name">${esc(ex.name)}</div>
+          <div class="exercise-meta">${esc(ex.targetMuscles?.[0] ?? ex.target ?? '')} · ${esc(ex.equipments?.[0] ?? ex.equipment ?? '')}</div>
         </div>
-        <button class="btn-ghost picker-add-btn" data-id="${ex.exerciseId ?? ex.id}">+</button>
+        <button class="btn-ghost picker-add-btn" data-id="${esc(ex.exerciseId ?? ex.id)}">+</button>
       </div>
     `).join('');
 
@@ -67,7 +71,7 @@ export function openExercisePicker(onAdd) {
       card.addEventListener('click', (e) => {
         if (e.target.classList.contains('picker-add-btn')) return;
         const ex = exercises.find(x => (x.exerciseId ?? x.id) === card.dataset.id);
-        if (ex) showExerciseDetail(ex, onAdd, closePicker);
+        if (ex) showExerciseDetail(ex, onAdd, closePicker, context);
       });
     });
     list.querySelectorAll('.picker-add-btn').forEach(btn => {
@@ -150,7 +154,7 @@ export function openExercisePicker(onAdd) {
   initialLoad();
 }
 
-function showExerciseDetail(ex, onAdd, closePicker) {
+function showExerciseDetail(ex, onAdd, closePicker, context = 'plan') {
   const existing = document.getElementById('exercise-detail-overlay');
   if (existing) existing.remove();
 
@@ -159,27 +163,28 @@ function showExerciseDetail(ex, onAdd, closePicker) {
   overlay.className = 'modal-overlay';
 
   const instructions = Array.isArray(ex.instructions) ? ex.instructions : [];
+  const addLabel = context === 'workout' ? t('picker.addWorkout') : t('picker.add');
   overlay.innerHTML = `
     <div class="modal">
       <div class="modal-handle"></div>
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <h2 class="modal-title" style="margin:0;font-size:20px">${ex.name}</h2>
+        <h2 class="modal-title" style="margin:0;font-size:20px">${esc(ex.name)}</h2>
         <button class="icon-btn" id="detail-close">✕</button>
       </div>
-      ${ex.gifUrl ? `<img src="${ex.gifUrl}" alt="${ex.name}" style="width:100%;border-radius:12px;margin-bottom:12px">` : ''}
+      ${ex.gifUrl ? `<img src="${ex.gifUrl}" alt="${esc(ex.name)}" style="width:100%;border-radius:12px;margin-bottom:12px">` : ''}
       <div style="display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap">
-        <span class="badge">${ex.targetMuscles?.[0] ?? ex.target ?? 'N/A'}</span>
-        <span class="badge">${ex.equipments?.[0] ?? ex.equipment ?? 'N/A'}</span>
-        ${(ex.bodyParts?.[0] ?? ex.bodyPart) ? `<span class="badge">${ex.bodyParts?.[0] ?? ex.bodyPart}</span>` : ''}
+        <span class="badge">${esc(ex.targetMuscles?.[0] ?? ex.target ?? 'N/A')}</span>
+        <span class="badge">${esc(ex.equipments?.[0] ?? ex.equipment ?? 'N/A')}</span>
+        ${(ex.bodyParts?.[0] ?? ex.bodyPart) ? `<span class="badge">${esc(ex.bodyParts?.[0] ?? ex.bodyPart)}</span>` : ''}
       </div>
       ${instructions.length ? `
         <h3 style="font-family:'Barlow Condensed',sans-serif;font-size:18px;margin-bottom:8px">Instructions</h3>
         <ol style="padding-left:20px;color:var(--text2);font-size:14px;line-height:1.6">
-          ${instructions.map(i => `<li style="margin-bottom:6px">${i}</li>`).join('')}
+          ${instructions.map(i => `<li style="margin-bottom:6px">${esc(i)}</li>`).join('')}
         </ol>
       ` : ''}
       <div style="margin-top:20px">
-        <button class="btn btn-primary" id="detail-add">${t('picker.add')}</button>
+        <button class="btn btn-primary" id="detail-add">${addLabel}</button>
       </div>
     </div>
   `;

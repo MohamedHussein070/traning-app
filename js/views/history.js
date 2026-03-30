@@ -3,6 +3,10 @@
 import * as DB from '../db.js';
 import { navigate, t, state } from '../app.js';
 
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 export function renderHistory(container, params = {}) {
   if (params.sessionId) { renderSessionDetail(container, params.sessionId); return; }
   renderSessionList(container);
@@ -33,7 +37,7 @@ function renderSessionList(container) {
                 state.settings.language === 'sv' ? 'sv-SE' : 'en-GB',
                 { weekday:'short', day:'numeric', month:'short', year:'numeric' }
               )}</div>
-              <div style="font-weight:600;margin-top:2px">${s.planName}</div>
+              <div style="font-weight:600;margin-top:2px">${esc(s.planName)}</div>
               <div class="session-meta">
                 <span>⏱ ${formatDuration(s.durationSeconds)}</span>
                 <span>🏋️ ${toDisplay(s.totalVolumeKg)} ${unit}</span>
@@ -59,7 +63,7 @@ function renderSessionDetail(container, sessionId) {
     <div class="view">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
         <button class="btn-icon" id="back-btn">←</button>
-        <h1 class="view-title" style="margin:0">${session.planName}</h1>
+        <h1 class="view-title" style="margin:0">${esc(session.planName)}</h1>
       </div>
       <div class="card" style="margin-bottom:16px">
         <div class="session-meta" style="font-size:15px;gap:20px">
@@ -71,7 +75,7 @@ function renderSessionDetail(container, sessionId) {
       ${session.exercises.map(ex => `
         <div class="card" style="margin-bottom:12px">
           <div style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:10px">
-            ${ex.name}
+            ${esc(ex.name)}
           </div>
           ${ex.sets.filter(s => s.done).map((s, i) => `
             <div class="set-row">
@@ -84,7 +88,7 @@ function renderSessionDetail(container, sessionId) {
               }
               <span class="set-check done" style="margin-left:auto;pointer-events:none"></span>
             </div>`).join('')}
-          <button class="btn-ghost" data-exname="${ex.name}" style="margin-top:8px;padding-left:0">
+          <button class="btn-ghost" data-exname="${esc(ex.name)}" style="margin-top:8px;padding-left:0">
             ${t('history.viewProgress')} →
           </button>
         </div>`).join('')}
