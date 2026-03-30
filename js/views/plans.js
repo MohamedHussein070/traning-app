@@ -88,7 +88,7 @@ function renderPlanDetail(container, planId) {
             <label class="form-label">${t('plans.name')}</label>
             <input class="input" id="plan-name-input" value="${esc(plan.name)}" placeholder="${t('plans.name')}">
           </div>
-          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+          <div style="display:flex;flex-direction:column;gap:12px">
             <div class="form-group" style="margin:0">
               <label class="form-label">${t('plans.startDate')}</label>
               <input class="input" type="date" id="plan-start" value="${plan.startDate || ''}">
