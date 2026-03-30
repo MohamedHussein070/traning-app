@@ -15,8 +15,8 @@ function getTodayPlan() {
   const now = new Date();
   return DB.getPlans().find(plan => {
     if (!plan.scheduledDays?.includes(today)) return false;
-    if (plan.startDate && new Date(plan.startDate) > now) return false;
-    if (plan.endDate && new Date(plan.endDate) < now) return false;
+    if (plan.startDate && new Date(plan.startDate + 'T00:00:00') > now) return false;
+    if (plan.endDate && new Date(plan.endDate + 'T23:59:59') < now) return false;
     return true;
   });
 }
@@ -44,6 +44,16 @@ export function renderHome(container) {
     state.settings.language === 'sv' ? 'sv-SE' : 'en-GB',
     { weekday: 'long', day: 'numeric', month: 'long' }
   );
+
+  function startWorkout(planId) {
+    const active = DB.getActiveSession();
+    if (active && active.planId !== planId) {
+      const planName = active.planName || 'another plan';
+      if (!confirm(`You have an unfinished session for "${planName}". Discard it and start a new workout?`)) return;
+      DB.clearActiveSession();
+    }
+    navigate('workout', { planId });
+  }
 
   container.innerHTML = `
     <div class="view">
@@ -89,9 +99,9 @@ export function renderHome(container) {
   `;
 
   document.getElementById('start-today')?.addEventListener('click', () => {
-    navigate('workout', { planId: todayPlan.id });
+    startWorkout(todayPlan.id);
   });
   document.getElementById('quick-start')?.addEventListener('click', () => {
-    navigate('workout', { planId: lastPlan.id });
+    startWorkout(lastPlan.id);
   });
 }

@@ -13,7 +13,11 @@ function _get(key) {
   try { return JSON.parse(localStorage.getItem(key)); } catch { return null; }
 }
 function _set(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    console.warn('localStorage write failed (quota?):', key, e);
+  }
 }
 function _uuid() {
   return Date.now().toString(36) + Math.random().toString(36).slice(2);

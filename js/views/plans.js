@@ -4,6 +4,10 @@ import * as DB from '../db.js';
 import { navigate, t, state } from '../app.js';
 import { openExercisePicker } from './exercise-picker.js';
 
+function esc(str) {
+  return String(str ?? '').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
 export function renderPlans(container, params = {}) {
   if (params.planId) {
     renderPlanDetail(container, params.planId);
@@ -33,7 +37,7 @@ function renderPlanList(container) {
                 ? `${plan.startDate} → ${plan.endDate}` : '';
               return `
                 <div class="plan-card" data-id="${plan.id}">
-                  <div class="plan-card-name">${plan.name}</div>
+                  <div class="plan-card-name">${esc(plan.name)}</div>
                   <div class="plan-card-meta">
                     ${plan.exercises?.length ?? 0} ${t('plans.exercises')}
                     ${dateRange ? ' · ' + dateRange : ''}
@@ -76,13 +80,13 @@ function renderPlanDetail(container, planId) {
       <div class="view">
         <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px">
           <button class="btn-icon" id="back-btn">←</button>
-          <h1 class="view-title" style="margin:0;flex:1">${plan.name || t('plans.new')}</h1>
+          <h1 class="view-title" style="margin:0;flex:1">${esc(plan.name) || t('plans.new')}</h1>
         </div>
 
         <div class="card" style="margin-bottom:16px">
           <div class="form-group">
             <label class="form-label">${t('plans.name')}</label>
-            <input class="input" id="plan-name-input" value="${plan.name}" placeholder="${t('plans.name')}">
+            <input class="input" id="plan-name-input" value="${esc(plan.name)}" placeholder="${t('plans.name')}">
           </div>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
             <div class="form-group" style="margin:0">
@@ -106,7 +110,7 @@ function renderPlanDetail(container, planId) {
         </div>
 
         <h2 style="font-family:'Barlow Condensed',sans-serif;font-size:20px;font-weight:700;margin-bottom:12px">
-          Exercises
+          ${t('plans.exercises').charAt(0).toUpperCase() + t('plans.exercises').slice(1)}
         </h2>
         <div id="exercise-list">
           ${plan.exercises.length === 0
@@ -151,7 +155,7 @@ function renderPlanDetail(container, planId) {
     document.getElementById('save-plan-btn').addEventListener('click', () => { save(); navigate('plans'); });
 
     document.getElementById('delete-plan-btn').addEventListener('click', () => {
-      if (confirm(`${t('confirm.delete')} "${plan.name}"?`)) {
+      if (confirm(`${t('confirm.delete')} "${esc(plan.name)}"?`)) {
         DB.deletePlan(plan.id);
         navigate('plans');
       }
@@ -225,7 +229,9 @@ function renderPlanDetail(container, planId) {
     });
     container.querySelectorAll('.ex-weight').forEach(inp => {
       inp.addEventListener('change', () => {
-        plan.exercises[parseInt(inp.dataset.i)].weight = parseFloat(inp.value) || 0;
+        const raw = parseFloat(inp.value) || 0;
+        plan.exercises[parseInt(inp.dataset.i)].weight =
+          state.settings.weightUnit === 'lbs' ? raw / 2.20462 : raw;
         DB.savePlan(plan);
       });
     });
@@ -241,17 +247,20 @@ function renderPlanDetail(container, planId) {
 }
 
 function renderExerciseRow(ex, i, total) {
+  const unit = state.settings.weightUnit;
+  const displayWeight = unit === 'lbs' ? parseFloat((ex.weight * 2.20462).toFixed(1)) : (ex.weight || 0);
+
   const typeOptions = ['weights','bodyweight','cardio'].map(type =>
-    `<option value="${type}" ${ex.type === type ? 'selected' : ''}>${type.charAt(0).toUpperCase() + type.slice(1)}</option>`
+    `<option value="${type}" ${ex.type === type ? 'selected' : ''}>${t('plans.type.' + type)}</option>`
   ).join('');
 
   return `
     <div class="card" style="margin-bottom:10px">
       <div style="display:flex;align-items:flex-start;gap:10px">
-        ${ex.gifUrl ? `<img src="${ex.gifUrl}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0" loading="lazy">` : ''}
+        ${ex.gifUrl ? `<img src="${esc(ex.gifUrl)}" style="width:48px;height:48px;border-radius:8px;object-fit:cover;flex-shrink:0" loading="lazy">` : ''}
         <div style="flex:1;min-width:0">
-          <div style="font-weight:600;font-size:15px;margin-bottom:4px">${ex.name}</div>
-          <div style="font-size:12px;color:var(--text2)">${ex.targetMuscle} · ${ex.equipment}</div>
+          <div style="font-weight:600;font-size:15px;margin-bottom:4px">${esc(ex.name)}</div>
+          <div style="font-size:12px;color:var(--text2)">${esc(ex.targetMuscle)} · ${esc(ex.equipment)}</div>
         </div>
         <div style="display:flex;gap:4px;flex-shrink:0">
           <button class="btn-icon ex-up" data-i="${i}" style="font-size:14px;width:36px;height:36px" ${i===0?'disabled':''}>↑</button>
@@ -261,27 +270,27 @@ function renderExerciseRow(ex, i, total) {
       </div>
       <div style="margin-top:12px;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;align-items:end">
         <div>
-          <div class="form-label">Type</div>
+          <div class="form-label">${t('plans.type')}</div>
           <select class="input ex-type-select" data-i="${i}" style="padding:8px">${typeOptions}</select>
         </div>
         ${ex.type === 'cardio' ? `
           <div>
-            <div class="form-label">Duration (min)</div>
+            <div class="form-label">${t('plans.duration')}</div>
             <input class="input ex-duration" data-i="${i}" type="number" min="1" value="${ex.duration || 20}" style="padding:8px">
           </div>
         ` : `
           <div>
-            <div class="form-label">Sets</div>
+            <div class="form-label">${t('plans.sets')}</div>
             <input class="input ex-sets" data-i="${i}" type="number" min="1" value="${ex.sets || 3}" style="padding:8px">
           </div>
           <div>
-            <div class="form-label">Reps</div>
+            <div class="form-label">${t('plans.reps')}</div>
             <input class="input ex-reps" data-i="${i}" type="number" min="1" value="${ex.reps || 10}" style="padding:8px">
           </div>
           ${ex.type === 'weights' ? `
             <div>
-              <div class="form-label">Weight (kg)</div>
-              <input class="input ex-weight" data-i="${i}" type="number" min="0" step="0.5" value="${ex.weight || 0}" style="padding:8px">
+              <div class="form-label">${t('workout.weight')} (${unit})</div>
+              <input class="input ex-weight" data-i="${i}" type="number" min="0" step="0.5" value="${displayWeight}" style="padding:8px">
             </div>
           ` : ''}
         `}

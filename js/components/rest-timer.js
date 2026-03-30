@@ -81,6 +81,7 @@ function playBeep() {
     gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.8);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + 0.8);
+    setTimeout(() => ctx.close(), 1000);
   } catch (e) { console.warn('Audio not available', e); }
 }
 
